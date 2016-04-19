@@ -64,7 +64,7 @@ class Tumor:
         image_obj = Image.fromarray(equ)
         image_obj.show()
         img_orig = Image.fromarray(data_slice)
-        image_obj.show()
+        img_orig.show()
         print equ.max(), data_slice.max()
 
 
