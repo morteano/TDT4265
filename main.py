@@ -1,3 +1,5 @@
+import pickle
+import os.path
 import numpy as np
 from PIL import Image
 import os
@@ -109,12 +111,25 @@ class Tumor:
             cv2.imshow("test", cv2.fastNlMeansDenoising(data[:, :, i].astype(np.uint8), None, 10, 7, 21))
             cv2.waitKey(50)
 
+    def getDenoised(self):
+        if os.path.isfile("denoiseImgs"):
+            file = open("denoiseImgs", 'rb')
+            denoised = pickle.load(file)
+            file.close()
+        else:
+            denoised = self.denoise()
+            file = open("denoiseImgs","wb")
+            pickle.dump(denoised, file)
+            file.close()
+        return denoised
+
 tumor = Tumor()
 # tumor.show_slice(50)
 #tumor.animate_data()
 #tumor.top_hat_slice(50)
 #tumor.denoise_test(50)
-tumor.animate_scan(tumor.denoise())
+denoised = tumor.getDenoised()
+tumor.animate_scan(denoised)
 # tumor.animate_hard()
 # print image_data.shape[2]
 
