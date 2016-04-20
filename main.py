@@ -30,9 +30,9 @@ for i in range(image_data.shape[2]):
     plt.clf()
 """
 global data_path
-#data_path = 'data/k230-T1_defaced.nii'
+data_path = 'data/k230-T1_defaced.nii'
 #data_path = 'data/k224-FLAIR_defaced.nii'
-data_path = 'data/k230-FLAIR_defaced.nii'
+#data_path = 'data/k230-FLAIR_defaced.nii'
 #data_path = 'data/k211-T1_defaced.nii'
 
 
@@ -64,13 +64,44 @@ class Tumor:
         plt.show()
 
     def show_slice(self, i):
-        data_slice = self.data[:, :, i].astype(np.uint8)
-        equ = cv2.equalizeHist(data_slice)
-        # image_obj = Image.fromarray(equ)
-        # image_obj.show(title='equ')
-        img_orig = Image.fromarray(data_slice)
-        img_orig.show(title='orig')
-        print equ.mean(), data_slice.max()
+        orig = self.data[:, :, i].astype(np.uint8)
+        cv2.imshow("Orig", orig)
+        cv2.imwrite("Orig.jpg", orig)
+        median = cv2.medianBlur(orig, 5)
+        cv2.imshow("Median", median)
+        cv2.imwrite("Median.jpg", median)
+        equ = cv2.equalizeHist(orig)
+        ret, thresh1 = cv2.threshold(median, 130, 255, cv2.THRESH_TOZERO_INV)
+        cv2.imshow("Thresh1", thresh1)
+        cv2.imwrite("Tresh1.jpg", thresh1)
+        equ = cv2.equalizeHist(thresh1)
+        cv2.imshow("Equ", equ)
+        cv2.imwrite("Equ.jpg", equ)
+        ret, thresh2 = cv2.threshold(equ, 200, 255, cv2.THRESH_BINARY)
+        blur = cv2.GaussianBlur(thresh2, (5, 5), 0)
+        harris = cv2.cornerHarris(thresh2, 2, 3, 0.04)
+        inverted = 255 - equ
+        reverted = 255 - thresh1
+
+        kernel = np.ones((3, 3), np.uint8)
+        opening = cv2.morphologyEx(equ, cv2.MORPH_OPEN, kernel, iterations=2)
+        sure_bg = cv2.dilate(opening, kernel, iterations=3)
+
+        # Finding sure foreground area
+        dist_transform = cv2.distanceTransform(opening, cv2.cv.CV_DIST_L2, 5)
+        ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
+
+        # Finding unknown region
+        sure_fg = np.uint8(sure_fg)
+        unknown = cv2.subtract(sure_bg, sure_fg)
+
+        kernel2 = np.ones((5, 5), np.uint8)
+        median2 = cv2.medianBlur(thresh2, 15)
+        th3 = cv2.adaptiveThreshold(equ, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+        closed = cv2.morphologyEx(thresh2, cv2.MORPH_CLOSE, kernel2)
+        cv2.imshow("Thresh2", thresh2)
+        cv2.imwrite("Tresh2.jpg", thresh2)
+        cv2.waitKey(0)
 
     def top_hat_slice(self, i):
         data_slice = self.data[:, :, i].astype(np.uint8)
@@ -164,12 +195,12 @@ class Tumor:
         return denoised
 
 tumor = Tumor()
-# tumor.show_slice(50)
+tumor.show_slice(73)
 #tumor.animate_data()
 #tumor.top_hat_slice(50)
 #tumor.denoise_test(50)
-denoised = tumor.getDenoised()
-tumor.animate_scan(denoised)
+#denoised = tumor.getDenoised()
+#tumor.animate_scan(denoised)
 # tumor.animate_hard()
 # print image_data.shape[2]
 
