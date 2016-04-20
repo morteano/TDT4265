@@ -30,7 +30,10 @@ for i in range(image_data.shape[2]):
     plt.clf()
 """
 global data_path
-data_path = 'data/k230-T1_defaced.nii'
+#data_path = 'data/k230-T1_defaced.nii'
+#data_path = 'data/k224-FLAIR_defaced.nii'
+data_path = 'data/k230-FLAIR_defaced.nii'
+#data_path = 'data/k211-T1_defaced.nii'
 
 
 class Tumor:
@@ -102,8 +105,26 @@ class Tumor:
 
     def animate_scan(self, scan_data):
         for i in range(scan_data.shape[2]):
-            cv2.imshow("test", scan_data[:, :, i].astype(np.uint8))
+            orig = scan_data[:, :, i].astype(np.uint8)
+            equ = cv2.equalizeHist(orig)
+            ret, thresh1 = cv2.threshold(orig, 115, 255, cv2.THRESH_TOZERO_INV)
+            equ = cv2.equalizeHist(thresh1)
+            ret, thresh2 = cv2.threshold(equ, 210, 255, cv2.THRESH_BINARY)
+            harris = cv2.cornerHarris(thresh2, 2, 3, 0.04)
+            inverted = 255 - equ
+            reverted = 255 - thresh1
+            cv2.imshow("test", orig)
             cv2.waitKey(50)
+
+    def animate_test(self, scan_data):
+        for i in range(10):
+            orig = scan_data[:, :, 70].astype(np.uint8)
+            equ = cv2.equalizeHist(orig)
+            inverted = 255 - equ
+            ret, thresh1 = cv2.threshold(orig, 110+5*i, 255, cv2.THRESH_TOZERO_INV)
+            reverted = 255 - thresh1
+            cv2.imshow("test", thresh1)
+            cv2.waitKey(1000)
 
     def animate_hard(self):
         data = self.get_data()
