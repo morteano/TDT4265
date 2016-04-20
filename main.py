@@ -114,7 +114,23 @@ class Tumor:
             harris = cv2.cornerHarris(thresh2, 2, 3, 0.04)
             inverted = 255 - equ
             reverted = 255 - thresh1
-            cv2.imshow("test", blur)
+
+            kernel = np.ones((3, 3), np.uint8)
+            opening = cv2.morphologyEx(thresh2, cv2.MORPH_OPEN, kernel, iterations=2)
+            sure_bg = cv2.dilate(opening, kernel, iterations=3)
+
+            # Finding sure foreground area
+            dist_transform = cv2.distanceTransform(opening, cv2.cv.CV_DIST_L2, 5)
+            ret, sure_fg = cv2.threshold(dist_transform, 0.7 * dist_transform.max(), 255, 0)
+
+            # Finding unknown region
+            sure_fg = np.uint8(sure_fg)
+            unknown = cv2.subtract(sure_bg, sure_fg)
+
+            kernel2 = np.ones((5, 5), np.uint8)
+            opening2 = cv2.morphologyEx(unknown, cv2.MORPH_OPEN, kernel)
+
+            cv2.imshow("test", opening2)
             cv2.waitKey(50)
 
     def animate_test(self, scan_data):
