@@ -109,11 +109,12 @@ class Tumor:
             equ = cv2.equalizeHist(orig)
             ret, thresh1 = cv2.threshold(orig, 115, 255, cv2.THRESH_TOZERO_INV)
             equ = cv2.equalizeHist(thresh1)
-            ret, thresh2 = cv2.threshold(equ, 210, 255, cv2.THRESH_BINARY)
+            ret, thresh2 = cv2.threshold(equ, 200, 255, cv2.THRESH_BINARY)
+            blur = cv2.GaussianBlur(thresh2, (5, 5), 0)
             harris = cv2.cornerHarris(thresh2, 2, 3, 0.04)
             inverted = 255 - equ
             reverted = 255 - thresh1
-            cv2.imshow("test", orig)
+            cv2.imshow("test", blur)
             cv2.waitKey(50)
 
     def animate_test(self, scan_data):
