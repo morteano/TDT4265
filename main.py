@@ -106,8 +106,9 @@ class Tumor:
     def animate_scan(self, scan_data):
         for i in range(scan_data.shape[2]):
             orig = scan_data[:, :, i].astype(np.uint8)
+            median = cv2.medianBlur(orig, 5)
             equ = cv2.equalizeHist(orig)
-            ret, thresh1 = cv2.threshold(orig, 115, 255, cv2.THRESH_TOZERO_INV)
+            ret, thresh1 = cv2.threshold(median, 115, 255, cv2.THRESH_TOZERO_INV)
             equ = cv2.equalizeHist(thresh1)
             ret, thresh2 = cv2.threshold(equ, 200, 255, cv2.THRESH_BINARY)
             blur = cv2.GaussianBlur(thresh2, (5, 5), 0)
@@ -116,7 +117,7 @@ class Tumor:
             reverted = 255 - thresh1
 
             kernel = np.ones((3, 3), np.uint8)
-            opening = cv2.morphologyEx(thresh2, cv2.MORPH_OPEN, kernel, iterations=2)
+            opening = cv2.morphologyEx(equ, cv2.MORPH_OPEN, kernel, iterations=2)
             sure_bg = cv2.dilate(opening, kernel, iterations=3)
 
             # Finding sure foreground area
@@ -128,9 +129,10 @@ class Tumor:
             unknown = cv2.subtract(sure_bg, sure_fg)
 
             kernel2 = np.ones((5, 5), np.uint8)
-            opening2 = cv2.morphologyEx(unknown, cv2.MORPH_OPEN, kernel)
-
-            cv2.imshow("test", opening2)
+            median2 = cv2.medianBlur(thresh2, 15)
+            th3 = cv2.adaptiveThreshold(equ,255,cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
+            closed = cv2.morphologyEx(thresh2, cv2.MORPH_CLOSE, kernel2)
+            cv2.imshow("test", thresh2)
             cv2.waitKey(50)
 
     def animate_test(self, scan_data):
